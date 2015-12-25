@@ -4,11 +4,12 @@
 import logging
 import argparse
 import random
+import webbrowser
+
 from datetime import datetime, date
 from evernote.api.client import EvernoteClient
 from evernote.edam.notestore.ttypes import NoteFilter, NotesMetadataResultSpec
 from evernote.edam.limits.constants import EDAM_USER_NOTES_MAX
-import webbrowser
 
 def valid_date(datestring):
   try:
