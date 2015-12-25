@@ -35,8 +35,8 @@ class RandomEvernoteSelector(object):
 class EvernoteWrapper(object):
   """A simplifying wrapper for Evernote API client object"""
 
-  def __init__(self, token):
-    self.client = EvernoteClient(token=token)
+  def __init__(self, token, sandbox):
+    self.client = EvernoteClient(token=token, sandbox=sandbox)
     self.notebooks = None
     self.notes = None
 
@@ -83,13 +83,15 @@ def main():
                       help="Print all debugging statements")
   parser.add_argument("-v", "--verbose", dest="loglevel", action="store_const", const=logging.INFO,
                       help="Print more information about progress")
+  parser.add_argument("--sandbox", dest="sandbox", action="store_true", default=False,
+                      help="Use a Sandbox environment of Evernote")
   parser.add_argument("token", metavar="TOKEN", help="Evernote API developer token (for testing)")
   args = parser.parse_args()
 
   logging.basicConfig(level=args.loglevel, format="[ %(levelname)-8s] %(message)s")
   logging.info("Fetching Evernote of the Day: %s", args.date)
   selector = RandomEvernoteSelector(args.date)
-  evernote_wrapper = EvernoteWrapper(args.token)
+  evernote_wrapper = EvernoteWrapper(args.token, args.sandbox)
   notebook = selector.get_random_notebook(evernote_wrapper)
   logging.info("Selected Evernote notebook: %s", notebook.name)
   note = selector.get_random_note(evernote_wrapper, notebook)
