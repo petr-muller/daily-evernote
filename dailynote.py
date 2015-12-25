@@ -3,7 +3,12 @@
 
 import logging
 import argparse
+import random
 from datetime import datetime, date
+from evernote.api.client import EvernoteClient
+from evernote.edam.notestore.ttypes import NoteFilter, NotesMetadataResultSpec
+from evernote.edam.limits.constants import EDAM_USER_NOTES_MAX
+import webbrowser
 
 def valid_date(datestring):
   try:
@@ -11,6 +16,62 @@ def valid_date(datestring):
   except ValueError:
     message = "Invalid date: '{0}'.".format(datestring)
     raise argparse.ArgumentTypeError(message)
+
+
+class RandomEvernoteSelector(object):
+  """A simple class selecting random elements from Evernote entities"""
+  def __init__(self, date_seed):
+    self.random = random
+    self.random.seed(date_seed)
+
+  def get_random_notebook(self, evernote_wrapper):
+    return self.random.choice(evernote_wrapper.list_notebooks())
+
+  def get_random_note(self, evernote_wrapper, notebook):
+    return self.random.choice(evernote_wrapper.notes_in_notebook(notebook).notes)
+
+
+class EvernoteWrapper(object):
+  """A simplifying wrapper for Evernote API client object"""
+
+  def __init__(self, token):
+    self.client = EvernoteClient(token=token)
+    self.notebooks = None
+    self.notes = None
+
+  def list_notebooks(self):
+    """Returns a list of notebooks for a user. Data are actually obtained only during first call of this function. For
+    next calls, the info is cached.
+    """
+    if self.notebooks is None:
+      note_store = self.client.get_note_store()
+      self.notebooks = note_store.listNotebooks()
+
+    return self.notebooks
+
+  def notes_in_notebook(self, notebook):
+    """Returns a list of notes in a notebook. Note records contain only a GUID and a note title. Data are actually
+    obtained only during first call of this function. For next calls, the info is cached.
+    """
+    if self.notes is None:
+      note_filter = NoteFilter(notebookGuid=notebook.guid)
+      result_spec = NotesMetadataResultSpec(includeTitle=True)
+      note_store = self.client.get_note_store()
+      self.notes = note_store.findNotesMetadata(self.client.token, note_filter, 0, EDAM_USER_NOTES_MAX, result_spec)
+
+    return self.notes
+
+  def get_note_content(self, note):
+    note_store = self.client.get_note_store()
+    return note_store.getNote(self.client.token, note.guid, True, False, False, False).content
+
+  def get_note_url(self, note):
+    """Returns the URL of a given note."""
+    note_url = "https://{0}/shard/{1}/nl/{2}/{3}"
+    service_url = self.client.service_host
+    user_store = self.client.get_user_store()
+    user = user_store.getUser()
+    return note_url.format(service_url, user.shardId, user.id, note.guid)
 
 
 def main():
@@ -21,10 +82,20 @@ def main():
                       help="Print all debugging statements")
   parser.add_argument("-v", "--verbose", dest="loglevel", action="store_const", const=logging.INFO,
                       help="Print more information about progress")
+  parser.add_argument("token", metavar="TOKEN", help="Evernote API developer token (for testing)")
   args = parser.parse_args()
 
   logging.basicConfig(level=args.loglevel, format="[ %(levelname)-8s] %(message)s")
   logging.info("Fetching Evernote of the Day: %s", args.date)
+  selector = RandomEvernoteSelector(args.date)
+  evernote_wrapper = EvernoteWrapper(args.token)
+  notebook = selector.get_random_notebook(evernote_wrapper)
+  logging.info("Selected Evernote notebook: %s", notebook.name)
+  note = selector.get_random_note(evernote_wrapper, notebook)
+  logging.info("Selected Evernote note: %s", note.title)
+  url = evernote_wrapper.get_note_url(note)
+  logging.info("Note URL: %s", url)
+  webbrowser.open(url)
 
 if __name__ == "__main__":
   main()
