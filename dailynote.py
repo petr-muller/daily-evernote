@@ -5,6 +5,7 @@ import logging
 import argparse
 import random
 import webbrowser
+import sys
 
 from datetime import datetime, date
 from evernote.api.client import EvernoteClient
@@ -29,6 +30,10 @@ class RandomEvernoteSelector(object):
     return self.random.choice(evernote_wrapper.list_notebooks())
 
   def get_random_note(self, evernote_wrapper, notebook):
+    if len(evernote_wrapper.notes_in_notebook(notebook).notes) == 0:
+      logging.fatal("No notes in notebook: %s", notebook.name)
+      sys.exit(1)
+
     return self.random.choice(evernote_wrapper.notes_in_notebook(notebook).notes)
 
 
