@@ -33,6 +33,9 @@ class RandomEvernoteSelector(object):
     return self.random.choice(evernote_wrapper.list_notebooks())
 
   def get_random_note(self, evernote_wrapper, notebook):
+    """
+    Given a notebook, returns a random note from that notebook
+    """
     if len(evernote_wrapper.notes_in_notebook(notebook).notes) == 0:
       logging.fatal("No notes in notebook: %s", notebook.name)
       sys.exit(1)
@@ -83,6 +86,7 @@ class EvernoteWrapper(object):
     return note_url.format(service_url, user.shardId, user.id, note.guid)
 
 class DailyEvernoteConfig(object):
+  # pylint: disable=too-few-public-methods
   def __init__(self, config):
     self.config = config
 
