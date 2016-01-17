@@ -7,7 +7,10 @@ import random
 import webbrowser
 import sys
 
+import os.path
+
 from datetime import datetime, date
+from ConfigParser import ConfigParser
 from evernote.api.client import EvernoteClient
 from evernote.edam.notestore.ttypes import NoteFilter, NotesMetadataResultSpec
 from evernote.edam.limits.constants import EDAM_USER_NOTES_MAX
@@ -79,6 +82,19 @@ class EvernoteWrapper(object):
     user = user_store.getUser()
     return note_url.format(service_url, user.shardId, user.id, note.guid)
 
+class DailyEvernoteConfig(object):
+  def __init__(self, config):
+    self.config = config
+
+  @property
+  def token(self):
+    return self.config.get("account", "token")
+
+
+def parse_config(config_file):
+  parser = ConfigParser()
+  parser.read(config_file)
+  return DailyEvernoteConfig(parser)
 
 def main():
   parser = argparse.ArgumentParser()
@@ -90,13 +106,15 @@ def main():
                       help="Print more information about progress")
   parser.add_argument("--sandbox", dest="sandbox", action="store_true", default=False,
                       help="Use a Sandbox environment of Evernote")
-  parser.add_argument("token", metavar="TOKEN", help="Evernote API developer token (for testing)")
+  parser.add_argument("--config", dest="config", default=os.path.join(os.path.expanduser("~"), ".daily-evernote"))
   args = parser.parse_args()
+
+  config = parse_config(args.config)
 
   logging.basicConfig(level=args.loglevel, format="[ %(levelname)-8s] %(message)s")
   logging.info("Fetching Evernote of the Day: %s", args.date)
   selector = RandomEvernoteSelector(args.date)
-  evernote_wrapper = EvernoteWrapper(args.token, args.sandbox)
+  evernote_wrapper = EvernoteWrapper(config.token, args.sandbox)
   notebook = selector.get_random_notebook(evernote_wrapper)
   logging.info("Selected Evernote notebook: %s", notebook.name)
   note = selector.get_random_note(evernote_wrapper, notebook)
