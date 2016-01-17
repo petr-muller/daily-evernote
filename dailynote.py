@@ -86,7 +86,14 @@ class EvernoteWrapper(object):
     return note_url.format(service_url, user.shardId, user.id, note.guid)
 
 class DailyEvernoteConfig(object):
+  """
+  Carries configuration for the script.
+  """
   # pylint: disable=too-few-public-methods
+
+  DEFAULT_CONFIG_FILENAME = ".daily-evernote"
+  DEFAULT_PATH = os.path.join(os.path.expanduser("~"), DEFAULT_CONFIG_FILENAME)
+
   def __init__(self, config):
     self.config = config
 
@@ -100,8 +107,10 @@ def parse_config(config_file):
   parser.read(config_file)
   return DailyEvernoteConfig(parser)
 
+
+
 def main():
-  parser = argparse.ArgumentParser()
+  parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
   parser.add_argument("-d", "--date", type=valid_date, default=date.today(), dest="date", metavar="YYYY-MM-DD",
                       help="A date in YYYY-MM-DD format",)
   parser.add_argument("--debug", dest="loglevel", action="store_const", const=logging.DEBUG, default=logging.WARNING,
@@ -110,7 +119,8 @@ def main():
                       help="Print more information about progress")
   parser.add_argument("--sandbox", dest="sandbox", action="store_true", default=False,
                       help="Use a Sandbox environment of Evernote")
-  parser.add_argument("--config", dest="config", default=os.path.join(os.path.expanduser("~"), ".daily-evernote"))
+  parser.add_argument("--config", dest="config", default=DailyEvernoteConfig.DEFAULT_PATH,
+                      help="Path to a configuration file")
   args = parser.parse_args()
 
   config = parse_config(args.config)
