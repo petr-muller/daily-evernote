@@ -1,4 +1,4 @@
-#!/usr/bin/python2
+#!/usr/bin/env python
 """A simple script fetching a random Evernote note from a random Evernote notebook."""
 
 import logging
