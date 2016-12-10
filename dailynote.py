@@ -15,6 +15,7 @@ from evernote.api.client import EvernoteClient
 from evernote.edam.notestore.ttypes import NoteFilter, NotesMetadataResultSpec
 from evernote.edam.limits.constants import EDAM_USER_NOTES_MAX
 
+
 def valid_date(datestring):
   try:
     return datetime.strptime(datestring, "%Y-%m-%d").date()
@@ -85,6 +86,7 @@ class EvernoteWrapper(object):
     user = user_store.getUser()
     return note_url.format(service_url, user.shardId, user.id, note.guid)
 
+
 class DailyEvernoteConfig(object):
   """
   Carries configuration for the script.
@@ -106,7 +108,6 @@ def parse_config(config_file):
   parser = ConfigParser()
   parser.read(config_file)
   return DailyEvernoteConfig(parser)
-
 
 
 def main():
